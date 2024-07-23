@@ -1,6 +1,7 @@
 import datetime
 import json
 
+from utils.bark import bark_push
 from utils.server_chan import server_push
 from utils.wechat_enterprise import wechat_enterprise_push
 from utils.email_push import email_push
@@ -82,8 +83,7 @@ def wanxiao_email_push(send_email, send_pwd, receive_email, smtp_address, smtp_p
 {json.dumps(check['post_dict']['updatainfo_detail'], sort_keys=True, indent=4, ensure_ascii=False)}
 </code></pre>
 </details>
-<details>
-<summary style="font-family: 'Microsoft YaHei UI',serif; color: lightskyblue;" >>>>打卡信息数据表格<<<</summary>
+<span style="font-family: 'Microsoft YaHei UI',serif; color: lightskyblue;" >>>>打卡信息数据表格<<<</span>
 <table id="customers">
 <tr>
 <th>Text</th>
@@ -107,7 +107,7 @@ def wanxiao_email_push(send_email, send_pwd, receive_email, smtp_address, smtp_p
                                          )
             mail_msg_list.append(
                 f"""
-</table></details>"""
+</table>"""
             )
         else:
             mail_msg_list.append(
@@ -202,3 +202,21 @@ def wanxiao_wechat_enterprise_push(corp_id, corp_secret, agent_id, to_user, chec
         else:
             push_list.append(check_info['errmsg'])
     return wechat_enterprise_push(corp_id, corp_secret, agent_id, to_user, "\n".join(push_list))
+
+
+def wanxiao_bark_push(device_key, group, check_info_list):
+    utc8_time = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+    title = f"""{utc8_time.strftime("%Y-%m-%d")}  健康打卡"""
+    push_list = []
+    for check_info in check_info_list:
+        if check_info["status"]:
+            name = check_info["post_dict"].get("username")
+            if not name:
+                name = check_info["post_dict"]["name"]
+            if check_info['res']['code'] == "10000":
+                push_list.append(f"""{name}：打卡{check_info['res']['msg']}😄😄😄""")
+            else:
+                push_list.append(f"""{name}：{check_info["res"]["data"]}😢😢😢""")
+        else:
+            push_list.append(check_info['errmsg'])
+    return bark_push(device_key, "\n".join(push_list), title, group)
